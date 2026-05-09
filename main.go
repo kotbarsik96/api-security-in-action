@@ -1,21 +1,31 @@
 package main
 
 import (
-	"api-security-in-action/src/api/controllers"
 	"api-security-in-action/src/db"
 	"api-security-in-action/src/domain/space"
-	"api-security-in-action/src/router"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func main() {
-	sdb, err := db.SetupDatabase()
+	gormDb, err := db.NewGormDB()
 	if err != nil {
 		panic(err)
 	}
 
-	spaceController := controllers.NewSpaceController(space.NewGormSpaceCreator(sdb))
+	router := gin.Default()
 
-	router := router.NewRouter(spaceController)
-	engine := router.SetupRouter()
-	engine.Run()
+	RegisterControllers(router, gormDb)
+
+	router.Run()
+}
+
+func RegisterControllers(router *gin.Engine, db *gorm.DB) {
+	api := router.Group("/api")
+
+	spaceCtrl := space.NewSpaceController(
+		space.NewSpaceCreateService(db))
+
+	spaceCtrl.RegisterRoutes(api)
 }
