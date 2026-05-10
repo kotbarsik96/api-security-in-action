@@ -1,6 +1,9 @@
 package db
 
 import (
+	"api-security-in-action/src/domain/message"
+	"api-security-in-action/src/domain/space"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -10,6 +13,8 @@ func NewGormDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	db.AutoMigrate(&space.Space{}, &message.Message{})
 
 	return db, nil
 }

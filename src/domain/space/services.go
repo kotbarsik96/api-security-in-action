@@ -1,6 +1,8 @@
 package space
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 )
 
@@ -14,6 +16,13 @@ func NewSpaceCreateService(db *gorm.DB) *SpaceCreateService {
 	}
 }
 
-func (s *SpaceCreateService) Create(data SpaceCreateData) error {
-	return nil
+func (s *SpaceCreateService) Create(ctx context.Context, data SpaceCreateData) error {
+	space := &Space{
+		Name:  data.Name,
+		Owner: data.Owner,
+	}
+
+	err := gorm.G[Space](s.DB).Create(ctx, space)
+
+	return err
 }

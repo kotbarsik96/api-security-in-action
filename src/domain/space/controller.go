@@ -2,12 +2,14 @@ package space
 
 import (
 	"api-security-in-action/src/api"
+	"context"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
 
 type SpaceCreator interface {
-	Create(SpaceCreateData) error
+	Create(ctx context.Context, data SpaceCreateData) error
 }
 
 type SpaceCreateData struct {
@@ -39,5 +41,16 @@ func (c *SpaceController) HandleCreateSpace(ctx *gin.Context) {
 		return
 	}
 
-	c.Creator.Create(data)
+	err = c.Creator.Create(ctx.Request.Context(), data)
+
+	if err != nil {
+		api.RespondError(ctx, api.Response{
+			Error: api.ErrInternal("Could not create space", err),
+		})
+		return
+	}
+
+	api.RespondCreated(ctx, api.Response{
+		Message: fmt.Sprintf("Created new space \"%v\"", data.Name),
+	})
 }
