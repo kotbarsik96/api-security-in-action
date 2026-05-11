@@ -1,4 +1,4 @@
-package message
+package models
 
 import "time"
 
@@ -7,4 +7,6 @@ type Message struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	SpaceID   uint      `json:"space_id"`
+	Author    string    `json:"author"`
+	Text      string    `json:"text"`
 }

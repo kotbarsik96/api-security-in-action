@@ -1,7 +1,9 @@
-package space
+package ctrlspace
 
 import (
 	"api-security-in-action/src/api"
+	"api-security-in-action/src/db/models"
+	"api-security-in-action/src/domain/space"
 	"context"
 	"fmt"
 
@@ -9,7 +11,7 @@ import (
 )
 
 type SpaceCreator interface {
-	Create(ctx context.Context, data SpaceCreateData) error
+	Create(ctx context.Context, data space.SpaceCreateData) (*models.Space, error)
 }
 
 type SpaceCreateData struct {
@@ -41,7 +43,10 @@ func (c *SpaceController) HandleCreateSpace(ctx *gin.Context) {
 		return
 	}
 
-	err = c.Creator.Create(ctx.Request.Context(), data)
+	s, err := c.Creator.Create(ctx.Request.Context(), space.SpaceCreateData{
+		Name:  data.Name,
+		Owner: data.Owner,
+	})
 
 	if err != nil {
 		api.RespondError(ctx, api.Response{
@@ -52,5 +57,6 @@ func (c *SpaceController) HandleCreateSpace(ctx *gin.Context) {
 
 	api.RespondCreated(ctx, api.Response{
 		Message: fmt.Sprintf("Created new space \"%v\"", data.Name),
+		Data:    gin.H{"space": s},
 	})
 }
