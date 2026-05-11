@@ -34,10 +34,13 @@ func NewMessageController(creator MessageCreator, repo MessageRepository) *Messa
 	}
 }
 
-func (c *MessageController) RegisterRoutes(rootGroup *gin.RouterGroup) {
-	rootGroup.POST("/spaces/:space_id/messages", c.HanldeCreateMessage)
-	rootGroup.GET("/spaces/:space_id/messages", c.HandleGetMessages)
-	rootGroup.GET("/messages/:message_id", c.HandleGetMessage)
+func (c *MessageController) RegisterRoutes(rootGroup *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+	auth := rootGroup.Group("", authMiddleware)
+	{
+		auth.POST("/spaces/:space_id/messages", c.HanldeCreateMessage)
+		auth.GET("/spaces/:space_id/messages", c.HandleGetMessages)
+		auth.GET("/messages/:message_id", c.HandleGetMessage)
+	}
 }
 
 type MessageCreateRequest struct {

@@ -13,7 +13,7 @@ func NewGormDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&models.Space{}, &models.Message{})
+	db.AutoMigrate(&models.Space{}, &models.Message{}, &models.User{})
 
 	return db, nil
 }
