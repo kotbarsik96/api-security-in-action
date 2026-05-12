@@ -1,24 +1,18 @@
-package ctrlaudit
+package controllers
 
 import (
 	"api-security-in-action/src/api"
-	"api-security-in-action/src/db/models"
-	"api-security-in-action/src/domain/audit"
-	"context"
+	"api-security-in-action/src/domain"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-type AuditRepository interface {
-	GetLogs(ctx context.Context, filters audit.GetLogsFilters) ([]models.Audit, error)
-}
-
 type AuditController struct {
-	Repository AuditRepository
+	Repository domain.AuditRepository
 }
 
-func NewAuditController(repo AuditRepository) *AuditController {
+func NewAuditController(repo domain.AuditRepository) *AuditController {
 	return &AuditController{
 		Repository: repo,
 	}
@@ -50,7 +44,7 @@ func (c *AuditController) HandleGetLogs(ctx *gin.Context) {
 		return
 	}
 
-	logs, err := c.Repository.GetLogs(ctx.Request.Context(), audit.GetLogsFilters{
+	logs, err := c.Repository.GetLogs(ctx.Request.Context(), domain.GetAuditLogsFilters{
 		Since:  query.Since,
 		Uuid:   query.Uuid,
 		UserID: query.UserID,

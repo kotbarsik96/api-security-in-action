@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"api-security-in-action/src/db/models"
+	"api-security-in-action/src/models"
 	"context"
 
 	"gorm.io/gorm"

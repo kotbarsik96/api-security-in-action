@@ -1,7 +1,7 @@
 package db
 
 import (
-	"api-security-in-action/src/db/models"
+	"api-security-in-action/src/models"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

@@ -1,7 +1,7 @@
 package audit
 
 import (
-	"api-security-in-action/src/db/models"
+	"api-security-in-action/src/models"
 	"log"
 
 	"github.com/gin-gonic/gin"

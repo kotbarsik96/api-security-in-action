@@ -2,7 +2,8 @@ package message
 
 import (
 	"api-security-in-action/src/api/apierrors"
-	"api-security-in-action/src/db/models"
+	"api-security-in-action/src/domain"
+	"api-security-in-action/src/models"
 	"context"
 	"errors"
 
@@ -19,13 +20,7 @@ func NewMessageCreateService(db *gorm.DB) *MessageCreateService {
 	}
 }
 
-type MessageCreateData struct {
-	SpaceID uint
-	Author  models.User
-	Text    string
-}
-
-func (s *MessageCreateService) Create(ctx context.Context, data MessageCreateData) (*models.Message, error) {
+func (s *MessageCreateService) Create(ctx context.Context, data domain.MessageCreateData) (*models.Message, error) {
 	// проверить, существует ли Space по переданному id
 	_, err := gorm.G[models.Space](s.DB).Where("id = ?", data.SpaceID).First(ctx)
 	if errors.Is(err, gorm.ErrRecordNotFound) {

@@ -2,7 +2,7 @@ package message
 
 import (
 	"api-security-in-action/src/api/apierrors"
-	"api-security-in-action/src/db/models"
+	"api-security-in-action/src/models"
 	"context"
 	"time"
 

@@ -1,15 +1,12 @@
 package main
 
 import (
-	"api-security-in-action/src/api/ctrlaudit"
-	"api-security-in-action/src/api/ctrlauth"
-	"api-security-in-action/src/api/ctrlmessage"
-	"api-security-in-action/src/api/ctrlspace"
+	"api-security-in-action/src/api/controllers"
 	"api-security-in-action/src/db"
-	"api-security-in-action/src/domain/audit"
-	"api-security-in-action/src/domain/auth"
-	"api-security-in-action/src/domain/message"
-	"api-security-in-action/src/domain/space"
+	"api-security-in-action/src/db/gorm_services/audit"
+	"api-security-in-action/src/db/gorm_services/auth"
+	"api-security-in-action/src/db/gorm_services/message"
+	"api-security-in-action/src/db/gorm_services/space"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -35,26 +32,26 @@ func RegisterControllers(router *gin.Engine, db *gorm.DB) {
 	auditMdw := audit.AuditMiddleware(db)
 
 	// space
-	spaceCtrl := ctrlspace.NewSpaceController(
+	spaceCtrl := controllers.NewSpaceController(
 		space.NewSpaceCreateService(db))
 
 	spaceCtrl.RegisterRoutes(api, authMdw, auditMdw)
 
 	// message
-	messageCtrl := ctrlmessage.NewMessageController(
+	messageCtrl := controllers.NewMessageController(
 		message.NewMessageCreateService(db),
 		message.NewMessagesRepository(db))
 
 	messageCtrl.RegisterRoutes(api, authMdw, auditMdw)
 
 	// auth
-	authCtrl := ctrlauth.NewAuthController(
+	authCtrl := controllers.NewAuthController(
 		auth.NewAuthService(db))
 
 	authCtrl.RegisterRoutes(api)
 
 	// audit
-	auditCtrl := ctrlaudit.NewAuditController(
+	auditCtrl := controllers.NewAuditController(
 		audit.NewAuditRepository(db))
 
 	auditCtrl.RegisterRoutes(api, authMdw, auditMdw)

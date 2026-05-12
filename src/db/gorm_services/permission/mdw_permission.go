@@ -2,7 +2,7 @@ package permission
 
 import (
 	"api-security-in-action/src/api"
-	"api-security-in-action/src/db/models"
+	"api-security-in-action/src/models"
 	"errors"
 	"net/http"
 

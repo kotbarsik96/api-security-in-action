@@ -1,25 +1,18 @@
-package ctrlauth
+package controllers
 
 import (
 	"api-security-in-action/src/api"
-	"api-security-in-action/src/db/models"
-	"context"
+	"api-security-in-action/src/domain"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
 
-type AuthService interface {
-	ValidateSignupCredentials(login, password string) map[string]error
-	Signup(ctx context.Context, login, password string) (*models.User, error)
-	Login(ctx context.Context, login, password string) (*models.User, error)
-}
-
 type AuthController struct {
-	AuthService AuthService
+	AuthService domain.AuthService
 }
 
-func NewAuthController(authService AuthService) *AuthController {
+func NewAuthController(authService domain.AuthService) *AuthController {
 	return &AuthController{
 		AuthService: authService,
 	}

@@ -1,24 +1,19 @@
-package ctrlspace
+package controllers
 
 import (
 	"api-security-in-action/src/api"
-	"api-security-in-action/src/db/models"
-	"api-security-in-action/src/domain/space"
-	"context"
+	"api-security-in-action/src/domain"
+	"api-security-in-action/src/models"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
 
-type SpaceCreator interface {
-	Create(ctx context.Context, data space.SpaceCreateData) (*models.Space, error)
-}
-
 type SpaceController struct {
-	Creator SpaceCreator
+	Creator domain.SpaceCreator
 }
 
-func NewSpaceController(creator SpaceCreator) *SpaceController {
+func NewSpaceController(creator domain.SpaceCreator) *SpaceController {
 	return &SpaceController{
 		Creator: creator,
 	}
@@ -49,7 +44,7 @@ func (c *SpaceController) HandleCreateSpace(ctx *gin.Context) {
 		return
 	}
 
-	s, err := c.Creator.Create(ctx.Request.Context(), space.SpaceCreateData{
+	s, err := c.Creator.Create(ctx.Request.Context(), domain.SpaceCreateData{
 		Name:  body.Name,
 		Owner: user,
 	})

@@ -1,4 +1,4 @@
-package ctrlmessage
+package api
 
 import (
 	"api-security-in-action/src/api/apierrors"

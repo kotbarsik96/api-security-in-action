@@ -1,11 +1,10 @@
-package ctrlmessage
+package controllers
 
 import (
 	"api-security-in-action/src/api"
 	"api-security-in-action/src/api/apierrors"
-	"api-security-in-action/src/db/models"
-	"api-security-in-action/src/domain/message"
-	"context"
+	"api-security-in-action/src/domain"
+	"api-security-in-action/src/models"
 	"errors"
 	"fmt"
 
@@ -13,21 +12,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type MessageCreator interface {
-	Create(ctx context.Context, data message.MessageCreateData) (*models.Message, error)
-}
-
-type MessageRepository interface {
-	GetSpaceMessages(ctx context.Context, spaceId uint, since string) ([]models.Message, error)
-	GetMessage(ctx context.Context, messageId uint) (models.Message, error)
-}
-
 type MessageController struct {
-	Creator    MessageCreator
-	Repository MessageRepository
+	Creator    domain.MessageCreator
+	Repository domain.MessageRepository
 }
 
-func NewMessageController(creator MessageCreator, repo MessageRepository) *MessageController {
+func NewMessageController(creator domain.MessageCreator, repo domain.MessageRepository) *MessageController {
 	return &MessageController{
 		Creator:    creator,
 		Repository: repo,
@@ -58,7 +48,7 @@ func (c *MessageController) HanldeCreateMessage(ctx *gin.Context) {
 		return
 	}
 
-	spaceId, err := GetSpaceIdParam(ctx)
+	spaceId, err := api.GetSpaceIdParam(ctx)
 	if err != nil {
 		api.RespondError(ctx, api.Response{
 			Error: api.ErrBadRequest(err.Error(), err),
@@ -66,7 +56,7 @@ func (c *MessageController) HanldeCreateMessage(ctx *gin.Context) {
 		return
 	}
 
-	msg, err := c.Creator.Create(ctx.Request.Context(), message.MessageCreateData{
+	msg, err := c.Creator.Create(ctx.Request.Context(), domain.MessageCreateData{
 		SpaceID: spaceId,
 		Author:  author,
 		Text:    body.Text,
@@ -91,11 +81,11 @@ func (c *MessageController) HanldeCreateMessage(ctx *gin.Context) {
 }
 
 type MessagesGetRequest struct {
-	Since string `form:"since"`
+	Since string `form:"since" time_format:"2006-01-02 15:04:05"`
 }
 
 func (c *MessageController) HandleGetMessages(ctx *gin.Context) {
-	spaceId, err := GetSpaceIdParam(ctx)
+	spaceId, err := api.GetSpaceIdParam(ctx)
 	if err != nil {
 		api.RespondError(ctx, api.Response{
 			Error: api.ErrBadRequest(err.Error(), nil),
@@ -127,7 +117,7 @@ func (c *MessageController) HandleGetMessages(ctx *gin.Context) {
 }
 
 func (c *MessageController) HandleGetMessage(ctx *gin.Context) {
-	id, err := GetMessageIdParam(ctx)
+	id, err := api.GetMessageIdParam(ctx)
 	if err != nil {
 		api.RespondError(ctx, api.Response{
 			Error: api.ErrBadRequest(apierrors.InvalidIdParam.Error(), nil),

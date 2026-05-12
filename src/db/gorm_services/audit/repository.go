@@ -1,9 +1,9 @@
 package audit
 
 import (
-	"api-security-in-action/src/db/models"
+	"api-security-in-action/src/domain"
+	"api-security-in-action/src/models"
 	"context"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -16,16 +16,7 @@ func NewAuditRepository(db *gorm.DB) *AuditRepository {
 	return &AuditRepository{DB: db}
 }
 
-type GetLogsFilters struct {
-	Since  *time.Time
-	Uuid   string
-	UserID uint
-	Path   string
-	Status int
-	Limit  int
-}
-
-func (r *AuditRepository) GetLogs(ctx context.Context, filters GetLogsFilters) ([]models.Audit, error) {
+func (r *AuditRepository) GetLogs(ctx context.Context, filters domain.GetAuditLogsFilters) ([]models.Audit, error) {
 	builder := gorm.G[models.Audit](r.DB).Where("")
 
 	if filters.Since != nil {
