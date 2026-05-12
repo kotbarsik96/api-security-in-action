@@ -39,3 +39,9 @@ func RespondError(c *gin.Context, response Response) {
 		"error": response.Error.Error(),
 	})
 }
+
+func RespondForbidden(c *gin.Context) {
+	RespondError(c, Response{
+		Error: ErrForbidden("", nil),
+	})
+}

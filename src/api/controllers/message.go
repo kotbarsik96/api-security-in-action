@@ -13,18 +13,22 @@ import (
 )
 
 type MessageController struct {
-	Creator    domain.MessageCreator
-	Repository domain.MessageRepository
+	Creator         domain.MessageCreator
+	Repository      domain.MessageRepository
+	PermissionGuard domain.PermissionGuard
 }
 
-func NewMessageController(creator domain.MessageCreator, repo domain.MessageRepository) *MessageController {
+func NewMessageController(creator domain.MessageCreator, repo domain.MessageRepository, permGuard domain.PermissionGuard) *MessageController {
 	return &MessageController{
-		Creator:    creator,
-		Repository: repo,
+		Creator:         creator,
+		Repository:      repo,
+		PermissionGuard: permGuard,
 	}
 }
 
-func (c *MessageController) RegisterRoutes(rootGroup *gin.RouterGroup, authMiddleware gin.HandlerFunc, auditMiddleware gin.HandlerFunc) {
+func (c *MessageController) RegisterRoutes(rootGroup *gin.RouterGroup,
+	authMiddleware gin.HandlerFunc,
+	auditMiddleware gin.HandlerFunc) {
 	auth := rootGroup.Group("", authMiddleware, auditMiddleware)
 	{
 		auth.POST("/spaces/:space_id/messages", c.HanldeCreateMessage)
@@ -53,6 +57,11 @@ func (c *MessageController) HanldeCreateMessage(ctx *gin.Context) {
 		api.RespondError(ctx, api.Response{
 			Error: api.ErrBadRequest(err.Error(), err),
 		})
+		return
+	}
+
+	hasPerm := api.CheckPermissions(ctx, c.PermissionGuard, domain.PermCreateMessageInSpace, spaceId, author.ID)
+	if !hasPerm {
 		return
 	}
 

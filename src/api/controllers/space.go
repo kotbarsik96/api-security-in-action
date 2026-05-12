@@ -10,12 +10,14 @@ import (
 )
 
 type SpaceController struct {
-	Creator domain.SpaceCreator
+	Creator           domain.SpaceCreator
+	PermissionService domain.PermissionService
 }
 
-func NewSpaceController(creator domain.SpaceCreator) *SpaceController {
+func NewSpaceController(creator domain.SpaceCreator, permService domain.PermissionService) *SpaceController {
 	return &SpaceController{
-		Creator: creator,
+		Creator:           creator,
+		PermissionService: permService,
 	}
 }
 
@@ -55,6 +57,8 @@ func (c *SpaceController) HandleCreateSpace(ctx *gin.Context) {
 		})
 		return
 	}
+
+	c.PermissionService.Allow(ctx.Request.Context(), domain.PermCreateMessageInSpace, s.ID, user.ID)
 
 	api.RespondCreated(ctx, api.Response{
 		Message: fmt.Sprintf("Created new space \"%v\"", body.Name),

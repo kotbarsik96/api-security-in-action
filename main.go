@@ -6,6 +6,7 @@ import (
 	"api-security-in-action/src/db/gorm_services/audit"
 	"api-security-in-action/src/db/gorm_services/auth"
 	"api-security-in-action/src/db/gorm_services/message"
+	"api-security-in-action/src/db/gorm_services/permission"
 	"api-security-in-action/src/db/gorm_services/space"
 
 	"github.com/gin-gonic/gin"
@@ -31,16 +32,20 @@ func RegisterControllers(router *gin.Engine, db *gorm.DB) {
 	authMdw := auth.MiddlewareAuthentication(db)
 	auditMdw := audit.AuditMiddleware(db)
 
+	permissionGuard := permission.NewPermissionGuard(db)
+
 	// space
 	spaceCtrl := controllers.NewSpaceController(
-		space.NewSpaceCreateService(db))
+		space.NewSpaceCreateService(db),
+		permission.NewPermissionService(db))
 
 	spaceCtrl.RegisterRoutes(api, authMdw, auditMdw)
 
 	// message
 	messageCtrl := controllers.NewMessageController(
 		message.NewMessageCreateService(db),
-		message.NewMessagesRepository(db))
+		message.NewMessagesRepository(db),
+		permissionGuard)
 
 	messageCtrl.RegisterRoutes(api, authMdw, auditMdw)
 

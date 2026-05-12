@@ -8,17 +8,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type GormSpaceCreateService struct {
+type SpaceCreateService struct {
 	DB *gorm.DB
 }
 
-func NewSpaceCreateService(db *gorm.DB) *GormSpaceCreateService {
-	return &GormSpaceCreateService{
+func NewSpaceCreateService(db *gorm.DB) *SpaceCreateService {
+	return &SpaceCreateService{
 		DB: db,
 	}
 }
 
-func (s *GormSpaceCreateService) Create(ctx context.Context, data domain.SpaceCreateData) (*models.Space, error) {
+func (s *SpaceCreateService) Create(ctx context.Context, data domain.SpaceCreateData) (*models.Space, error) {
 	space := &models.Space{
 		Name:    data.Name,
 		OwnerID: data.Owner.ID,
