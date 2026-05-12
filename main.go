@@ -1,6 +1,7 @@
 package main
 
 import (
+	"api-security-in-action/src/api/ctrlaudit"
 	"api-security-in-action/src/api/ctrlauth"
 	"api-security-in-action/src/api/ctrlmessage"
 	"api-security-in-action/src/api/ctrlspace"
@@ -51,4 +52,10 @@ func RegisterControllers(router *gin.Engine, db *gorm.DB) {
 		auth.NewAuthService(db))
 
 	authCtrl.RegisterRoutes(api)
+
+	// audit
+	auditCtrl := ctrlaudit.NewAuditController(
+		audit.NewAuditRepository(db))
+
+	auditCtrl.RegisterRoutes(api, authMdw, auditMdw)
 }
