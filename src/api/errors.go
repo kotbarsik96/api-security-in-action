@@ -60,6 +60,13 @@ func ErrUnauthorized(messageAbstract string, err error) *AppError {
 	return &AppError{http.StatusUnauthorized, "UNAUTHORIZED", messageAbstract, err}
 }
 
+func ErrForbidden(messageAbstract string, err error) *AppError {
+	if messageAbstract == "" {
+		messageAbstract = "Forbidden"
+	}
+	return &AppError{http.StatusForbidden, "FORBIDDEN", messageAbstract, err}
+}
+
 func ErrNotFound(messageAbstract string, err error) *AppError {
 	if messageAbstract == "" {
 		messageAbstract = "Resource not found"
