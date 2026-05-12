@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"api-security-in-action/src/api"
+	"api-security-in-action/src/api/apierrors"
 	"api-security-in-action/src/domain"
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -47,9 +49,16 @@ func (c *AuthController) HandleSignup(ctx *gin.Context) {
 
 	user, err := c.AuthService.Signup(ctx.Request.Context(), data.Login, data.Password)
 	if err != nil {
-		api.RespondError(ctx, api.Response{
-			Error: api.ErrInternal("Could not sign up", err),
-		})
+		if errors.Is(err, apierrors.LoginIsTaken) {
+			api.RespondError(ctx, api.Response{
+				Error: api.ErrUnprocessableEntity(err.Error(), nil),
+			})
+		} else {
+			api.RespondError(ctx, api.Response{
+				Error: api.ErrInternal("Could not sign up", err),
+			})
+		}
+
 		return
 	}
 

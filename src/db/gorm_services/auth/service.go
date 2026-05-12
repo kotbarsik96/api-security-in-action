@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"api-security-in-action/src/api/apierrors"
 	"api-security-in-action/src/models"
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -32,6 +34,16 @@ func (c *AuthService) ValidateSignupCredentials(login, password string) map[stri
 }
 
 func (c *AuthService) Signup(ctx context.Context, login, password string) (*models.User, error) {
+	_, err := gorm.G[models.User](c.DB).Where("login = ?", login).First(ctx)
+	exists := !errors.Is(err, gorm.ErrRecordNotFound)
+	if exists {
+		return nil, apierrors.LoginIsTaken
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
 	hashedPassword, err := HashPassword(password)
 	if err != nil {
 		return nil, err
