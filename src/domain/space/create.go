@@ -19,14 +19,15 @@ func NewSpaceCreateService(db *gorm.DB) *SpaceCreateService {
 
 type SpaceCreateData struct {
 	Name  string
-	Owner string
+	Owner models.User
 }
 
 func (s *SpaceCreateService) Create(ctx context.Context, data SpaceCreateData) (*models.Space, error) {
 	space := &models.Space{
-		Name:  data.Name,
-		Owner: data.Owner,
+		Name:    data.Name,
+		OwnerID: data.Owner.ID,
 	}
+
 	err := gorm.G[models.Space](s.DB).Create(ctx, space)
 
 	return space, err

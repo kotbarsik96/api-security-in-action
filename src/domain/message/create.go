@@ -21,7 +21,7 @@ func NewMessageCreateService(db *gorm.DB) *MessageCreateService {
 
 type MessageCreateData struct {
 	SpaceID uint
-	Author  string
+	Author  models.User
 	Text    string
 }
 
@@ -33,9 +33,9 @@ func (s *MessageCreateService) Create(ctx context.Context, data MessageCreateDat
 	}
 
 	msg := &models.Message{
-		SpaceID: data.SpaceID,
-		Author:  data.Author,
-		Text:    data.Text,
+		SpaceID:  data.SpaceID,
+		AuthorID: data.Author.ID,
+		Text:     data.Text,
 	}
 	err = gorm.G[models.Message](s.DB).Create(ctx, msg)
 	return msg, err

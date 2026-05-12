@@ -44,11 +44,12 @@ func (c *MessageController) RegisterRoutes(rootGroup *gin.RouterGroup, authMiddl
 }
 
 type MessageCreateRequest struct {
-	Author string `json:"author" binding:"required"`
-	Text   string `json:"text" binding:"required"`
+	Text string `json:"text" binding:"required"`
 }
 
 func (c *MessageController) HanldeCreateMessage(ctx *gin.Context) {
+	author := ctx.MustGet("user").(models.User)
+
 	var body MessageCreateRequest
 	if err := ctx.ShouldBind(&body); err != nil {
 		api.RespondError(ctx, api.Response{
@@ -67,7 +68,7 @@ func (c *MessageController) HanldeCreateMessage(ctx *gin.Context) {
 
 	msg, err := c.Creator.Create(ctx.Request.Context(), message.MessageCreateData{
 		SpaceID: spaceId,
-		Author:  body.Author,
+		Author:  author,
 		Text:    body.Text,
 	})
 	if err != nil {
