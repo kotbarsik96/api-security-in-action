@@ -5,6 +5,7 @@ import (
 	"api-security-in-action/src/api/ctrlmessage"
 	"api-security-in-action/src/api/ctrlspace"
 	"api-security-in-action/src/db"
+	"api-security-in-action/src/domain/audit"
 	"api-security-in-action/src/domain/auth"
 	"api-security-in-action/src/domain/message"
 	"api-security-in-action/src/domain/space"
@@ -30,19 +31,20 @@ func RegisterControllers(router *gin.Engine, db *gorm.DB) {
 	api := router.Group("/api")
 
 	authMdw := auth.MiddlewareAuthentication(db)
+	auditMdw := audit.AuditMiddleware(db)
 
 	// space
 	spaceCtrl := ctrlspace.NewSpaceController(
 		space.NewSpaceCreateService(db))
 
-	spaceCtrl.RegisterRoutes(api, authMdw)
+	spaceCtrl.RegisterRoutes(api, authMdw, auditMdw)
 
 	// message
 	messageCtrl := ctrlmessage.NewMessageController(
 		message.NewMessageCreateService(db),
 		message.NewMessagesRepository(db))
 
-	messageCtrl.RegisterRoutes(api, authMdw)
+	messageCtrl.RegisterRoutes(api, authMdw, auditMdw)
 
 	// auth
 	authCtrl := ctrlauth.NewAuthController(

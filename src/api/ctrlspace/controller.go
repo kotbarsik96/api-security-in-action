@@ -29,8 +29,10 @@ func NewSpaceController(creator SpaceCreator) *SpaceController {
 	}
 }
 
-func (c *SpaceController) RegisterRoutes(rootRoute *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	auth := rootRoute.Group("", authMiddleware)
+func (c *SpaceController) RegisterRoutes(rootRoute *gin.RouterGroup,
+	authMiddleware gin.HandlerFunc,
+	auditMiddleware gin.HandlerFunc) {
+	auth := rootRoute.Group("", authMiddleware, auditMiddleware)
 	{
 		auth.POST("/spaces", c.HandleCreateSpace)
 	}

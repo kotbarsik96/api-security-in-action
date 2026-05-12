@@ -34,8 +34,8 @@ func NewMessageController(creator MessageCreator, repo MessageRepository) *Messa
 	}
 }
 
-func (c *MessageController) RegisterRoutes(rootGroup *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	auth := rootGroup.Group("", authMiddleware)
+func (c *MessageController) RegisterRoutes(rootGroup *gin.RouterGroup, authMiddleware gin.HandlerFunc, auditMiddleware gin.HandlerFunc) {
+	auth := rootGroup.Group("", authMiddleware, auditMiddleware)
 	{
 		auth.POST("/spaces/:space_id/messages", c.HanldeCreateMessage)
 		auth.GET("/spaces/:space_id/messages", c.HandleGetMessages)
