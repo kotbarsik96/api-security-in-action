@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -16,11 +17,38 @@ type AuthHeader struct {
 	Authorization string
 }
 
-func AbortUnauthorized(ctx *gin.Context) {
-	ctx.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrUnauthorized("", nil))
+func AbortUnauthorized(c *gin.Context) {
+	c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrUnauthorized("", nil))
 }
 
 func MiddlewareAuthentication(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		userId := session.Get("user_id")
+		if userId == nil {
+			AbortUnauthorized(c)
+			return
+		}
+
+		user, err := gorm.G[models.User](db).Where("id = ?", userId).First(c.Request.Context())
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				session.Clear()
+				AbortUnauthorized(c)
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrInternal("", nil))
+			}
+
+			return
+		}
+
+		c.Set("user", user)
+
+		c.Next()
+	}
+}
+
+func MiddlewareAuthenticationDumb(db *gorm.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// временная реализация до прочтения главы 4 (Session Cookie Authentication)
 		var h AuthHeader

@@ -10,3 +10,8 @@ type AuthService interface {
 	Signup(ctx context.Context, login, password string) (*models.User, error)
 	Login(ctx context.Context, login, password string) (*models.User, error)
 }
+
+type CsrfService interface {
+	GenerateToken(sessID []byte) []byte
+	GetCsrfProtectedMethods() []string
+}

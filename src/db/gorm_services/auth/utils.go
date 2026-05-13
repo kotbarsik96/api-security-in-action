@@ -6,7 +6,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func HashPassword(password string) (string, error) {
+type BcryptPasswordService struct {
+}
+
+func (s *BcryptPasswordService) CreateHash(password string) (string, error) {
 	buf := bytes.NewBufferString(password)
 	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(buf.Bytes(), bcrypt.DefaultCost)
 	if err != nil {
@@ -14,4 +17,9 @@ func HashPassword(password string) (string, error) {
 	}
 
 	return string(hashedPasswordBytes), nil
+}
+
+func CompareHashAndPassword(hashedPassword, password []byte) bool {
+	err := bcrypt.CompareHashAndPassword(hashedPassword, password)
+	return err == nil
 }

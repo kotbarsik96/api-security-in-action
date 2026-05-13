@@ -8,25 +8,49 @@ import (
 	"api-security-in-action/src/db/gorm_services/message"
 	"api-security-in-action/src/db/gorm_services/permission"
 	"api-security-in-action/src/db/gorm_services/space"
+	"api-security-in-action/src/domain"
+	"log"
+	"os"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
 
 func main() {
-	gormDb, err := db.NewGormDB()
+	err := godotenv.Load()
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error loading .env: %v", err)
 	}
 
-	router := gin.Default()
+	gormDb, err := db.NewGormDB()
+	if err != nil {
+		log.Fatalf("Error loading database: %v", err)
+	}
 
-	RegisterControllers(router, gormDb)
+	csrfService := auth.NewCsrfService([]byte(os.Getenv("HMAC_SECRET")))
+
+	router := CreateRouter(csrfService)
+
+	RegisterControllers(router, gormDb, csrfService)
 
 	router.Run()
 }
 
-func RegisterControllers(router *gin.Engine, db *gorm.DB) {
+func CreateRouter(csrfService domain.CsrfService) *gin.Engine {
+	r := gin.Default()
+
+	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
+	r.Use(sessions.Sessions(os.Getenv("APP_NAME"), store))
+
+	r.Use(auth.MiddlewareCSRF(csrfService))
+
+	return r
+}
+
+func RegisterControllers(router *gin.Engine, db *gorm.DB, csrfService domain.CsrfService) {
 	api := router.Group("/api")
 
 	authMdw := auth.MiddlewareAuthentication(db)
@@ -51,7 +75,8 @@ func RegisterControllers(router *gin.Engine, db *gorm.DB) {
 
 	// auth
 	authCtrl := controllers.NewAuthController(
-		auth.NewAuthService(db))
+		auth.NewAuthService(db),
+		csrfService)
 
 	authCtrl.RegisterRoutes(api)
 

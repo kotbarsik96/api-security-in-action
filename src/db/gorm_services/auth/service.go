@@ -9,8 +9,14 @@ import (
 	"gorm.io/gorm"
 )
 
+type PasswordService interface {
+	CreateHash(password string) (string, error)
+	CompareHashAndPassword(hashedPassword, password []byte) bool
+}
+
 type AuthService struct {
-	DB *gorm.DB
+	DB              *gorm.DB
+	PasswordService PasswordService
 }
 
 func NewAuthService(db *gorm.DB) *AuthService {
@@ -44,7 +50,7 @@ func (c *AuthService) Signup(ctx context.Context, login, password string) (*mode
 		return nil, err
 	}
 
-	hashedPassword, err := HashPassword(password)
+	hashedPassword, err := c.PasswordService.CreateHash(password)
 	if err != nil {
 		return nil, err
 	}
@@ -59,5 +65,19 @@ func (c *AuthService) Signup(ctx context.Context, login, password string) (*mode
 }
 
 func (c *AuthService) Login(ctx context.Context, login, password string) (*models.User, error) {
-	return nil, nil
+	user, err := gorm.G[models.User](c.DB).Where("login = ?", login).First(ctx)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apierrors.InvalidCredentials
+		} else {
+			return nil, err
+		}
+	}
+
+	passwordsMatch := c.PasswordService.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if !passwordsMatch {
+		return nil, apierrors.InvalidCredentials
+	}
+
+	return &user, nil
 }
