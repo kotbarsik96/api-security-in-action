@@ -39,7 +39,7 @@ func (c *AuthService) ValidateSignupCredentials(login, password string) map[stri
 	return errs
 }
 
-func (c *AuthService) Signup(ctx context.Context, login, password string) (*models.User, error) {
+func (c *AuthService) CreateUser(ctx context.Context, login, password string) (*models.User, error) {
 	_, err := gorm.G[models.User](c.DB).Where("login = ?", login).First(ctx)
 	exists := !errors.Is(err, gorm.ErrRecordNotFound)
 	if exists {
@@ -64,7 +64,7 @@ func (c *AuthService) Signup(ctx context.Context, login, password string) (*mode
 	return user, nil
 }
 
-func (c *AuthService) Login(ctx context.Context, login, password string) (*models.User, error) {
+func (c *AuthService) CheckCredentials(ctx context.Context, login, password string) (*models.User, error) {
 	user, err := gorm.G[models.User](c.DB).Where("login = ?", login).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

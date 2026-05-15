@@ -36,7 +36,9 @@ func SetCsrfCookie(ctx *gin.Context, token []byte) {
 		secure = false
 	}
 
-	ctx.SetCookie("XSRF-Token", string(token), 0, "/", os.Getenv("CSRF_DOMAIN"), secure, false)
+	maxAge := 3600 * 24
+
+	ctx.SetCookie("XSRF-Token", string(token), maxAge, "/", os.Getenv("CSRF_DOMAIN"), secure, false)
 }
 
 type UserSignupRequest struct {
@@ -56,13 +58,13 @@ func (c *AuthController) HandleSignup(ctx *gin.Context) {
 	errs := c.AuthService.ValidateSignupCredentials(data.Login, data.Password)
 	if len(errs) > 0 {
 		api.RespondError(ctx, api.Response{
-			Error: api.ErrUnprocessableEntity("Could not sign up: validation errors", nil),
+			Error: api.ErrUnprocessableEntity("Could not sign up: invalid credentials", nil),
 			Data:  gin.H{"errors": errs},
 		})
 		return
 	}
 
-	user, err := c.AuthService.Signup(ctx.Request.Context(), data.Login, data.Password)
+	user, err := c.AuthService.CreateUser(ctx.Request.Context(), data.Login, data.Password)
 	if err != nil {
 		if errors.Is(err, apierrors.LoginIsTaken) {
 			api.RespondError(ctx, api.Response{
@@ -100,6 +102,8 @@ func (c *AuthController) HandleCsrfToken(ctx *gin.Context) {
 
 	token := c.CsrfService.GenerateToken([]byte(session.ID()))
 	SetCsrfCookie(ctx, token)
+
+	api.RespondOk(ctx, api.Response{})
 }
 
 type UserLoginRequest struct {
@@ -117,7 +121,7 @@ func (c *AuthController) HandleLogin(ctx *gin.Context) {
 		return
 	}
 
-	user, err := c.AuthService.Login(ctx.Request.Context(), body.Login, body.Password)
+	user, err := c.AuthService.CheckCredentials(ctx.Request.Context(), body.Login, body.Password)
 	if err != nil {
 		if errors.Is(err, apierrors.InvalidCredentials) {
 			api.RespondError(ctx, api.Response{

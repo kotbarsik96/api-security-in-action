@@ -21,6 +21,11 @@ func (s *CsrfService) GenerateToken(sessID []byte) []byte {
 	return mac.Sum(nil)
 }
 
+func (s *CsrfService) CompareToken(sessionID []byte, token []byte) bool {
+	expected := s.GenerateToken(sessionID)
+	return hmac.Equal(expected, token)
+}
+
 func (s *CsrfService) GetCsrfProtectedMethods() []string {
 	return []string{"POST", "PUT", "DELETE"}
 }

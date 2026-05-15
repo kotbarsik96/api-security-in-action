@@ -2,7 +2,6 @@ package auth
 
 import (
 	"api-security-in-action/src/domain"
-	"crypto/hmac"
 	"slices"
 	"strings"
 
@@ -33,9 +32,7 @@ func MiddlewareCSRF(service domain.CsrfService) gin.HandlerFunc {
 
 		xcsrfToken := []byte(headers.XCsrfToken)
 
-		expected := service.GenerateToken(sessID)
-
-		if !hmac.Equal(expected, xcsrfToken) {
+		if !service.CompareToken(sessID, xcsrfToken) {
 			AbortUnauthorized(c)
 			return
 		}
