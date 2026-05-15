@@ -3,6 +3,7 @@ package auth
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 )
 
 type CsrfService struct {
@@ -15,17 +16,19 @@ func NewCsrfService(secret []byte) *CsrfService {
 	}
 }
 
-func (s *CsrfService) GenerateToken(sessID []byte) []byte {
+func (s *CsrfService) GenerateToken(id string) string {
 	mac := hmac.New(sha256.New, s.Secret)
-	mac.Write(sessID)
-	return mac.Sum(nil)
+	mac.Write([]byte(id))
+	return base64.URLEncoding.EncodeToString(mac.Sum(nil))
 }
 
-func (s *CsrfService) CompareToken(sessionID []byte, token []byte) bool {
-	expected := s.GenerateToken(sessionID)
-	return hmac.Equal(expected, token)
-}
+func (s *CsrfService) CompareToken(id string, token string) bool {
+	idDecoded, err := base64.URLEncoding.DecodeString(s.GenerateToken(id))
+	if err != nil {
+		return false
+	}
 
-func (s *CsrfService) GetCsrfProtectedMethods() []string {
-	return []string{"POST", "PUT", "DELETE"}
+	tokenDecoded, err := base64.URLEncoding.DecodeString(token)
+
+	return hmac.Equal(idDecoded, tokenDecoded)
 }

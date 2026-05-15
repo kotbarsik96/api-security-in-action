@@ -8,7 +8,6 @@ import (
 	"api-security-in-action/src/db/gorm_services/message"
 	"api-security-in-action/src/db/gorm_services/permission"
 	"api-security-in-action/src/db/gorm_services/space"
-	"api-security-in-action/src/domain"
 	"log"
 	"os"
 
@@ -30,31 +29,30 @@ func main() {
 		log.Fatalf("Error loading database: %v", err)
 	}
 
-	csrfService := auth.NewCsrfService([]byte(os.Getenv("HMAC_SECRET")))
+	router := CreateRouter()
 
-	router := CreateRouter(csrfService)
-
-	RegisterControllers(router, gormDb, csrfService)
+	RegisterControllers(router, gormDb)
 
 	router.Run()
 }
 
-func CreateRouter(csrfService domain.CsrfService) *gin.Engine {
+func CreateRouter() *gin.Engine {
 	r := gin.Default()
 
 	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
 	r.Use(sessions.Sessions(os.Getenv("APP_NAME"), store))
 
-	r.Use(auth.MiddlewareCSRF(csrfService))
-
 	return r
 }
 
-func RegisterControllers(router *gin.Engine, db *gorm.DB, csrfService domain.CsrfService) {
+func RegisterControllers(router *gin.Engine, db *gorm.DB) {
 	api := router.Group("/api")
 
 	authMdw := auth.MiddlewareAuthentication(db)
 	auditMdw := audit.AuditMiddleware(db)
+
+	csrfService := auth.NewCsrfService([]byte(os.Getenv("HMAC_SECRET")))
+	csrfMdw := auth.MiddlewareCSRF(csrfService)
 
 	permissionGuard := permission.NewPermissionGuard(db)
 
@@ -63,7 +61,7 @@ func RegisterControllers(router *gin.Engine, db *gorm.DB, csrfService domain.Csr
 		space.NewSpaceCreateService(db),
 		permission.NewPermissionService(db))
 
-	spaceCtrl.RegisterRoutes(api, authMdw, auditMdw)
+	spaceCtrl.RegisterRoutes(api, authMdw, auditMdw, csrfMdw)
 
 	// message
 	messageCtrl := controllers.NewMessageController(
@@ -71,11 +69,11 @@ func RegisterControllers(router *gin.Engine, db *gorm.DB, csrfService domain.Csr
 		message.NewMessagesRepository(db),
 		permissionGuard)
 
-	messageCtrl.RegisterRoutes(api, authMdw, auditMdw)
+	messageCtrl.RegisterRoutes(api, authMdw, auditMdw, csrfMdw)
 
 	// auth
 	authCtrl := controllers.NewAuthController(
-		auth.NewAuthService(db),
+		auth.NewAuthService(db, auth.NewBcryptPasswordService()),
 		csrfService)
 
 	authCtrl.RegisterRoutes(api)

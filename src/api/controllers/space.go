@@ -23,10 +23,12 @@ func NewSpaceController(creator domain.SpaceCreator, permService domain.Permissi
 
 func (c *SpaceController) RegisterRoutes(rootRoute *gin.RouterGroup,
 	authMiddleware gin.HandlerFunc,
-	auditMiddleware gin.HandlerFunc) {
+	auditMiddleware gin.HandlerFunc,
+	csrfMiddleware gin.HandlerFunc) {
 	auth := rootRoute.Group("", authMiddleware, auditMiddleware)
+	csrf := auth.Group("", csrfMiddleware)
 	{
-		auth.POST("/spaces", c.HandleCreateSpace)
+		csrf.POST("/spaces", c.HandleCreateSpace)
 	}
 }
 

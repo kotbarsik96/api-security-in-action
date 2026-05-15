@@ -19,9 +19,10 @@ type AuthService struct {
 	PasswordService PasswordService
 }
 
-func NewAuthService(db *gorm.DB) *AuthService {
+func NewAuthService(db *gorm.DB, pwdService PasswordService) *AuthService {
 	return &AuthService{
-		DB: db,
+		DB:              db,
+		PasswordService: pwdService,
 	}
 }
 
@@ -41,12 +42,11 @@ func (c *AuthService) ValidateSignupCredentials(login, password string) map[stri
 
 func (c *AuthService) CreateUser(ctx context.Context, login, password string) (*models.User, error) {
 	_, err := gorm.G[models.User](c.DB).Where("login = ?", login).First(ctx)
-	exists := !errors.Is(err, gorm.ErrRecordNotFound)
-	if exists {
+	if err == nil {
+		// логин занят
 		return nil, apierrors.LoginIsTaken
-	}
-
-	if err != nil {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// не удалось убедиться, что логин не занят
 		return nil, err
 	}
 

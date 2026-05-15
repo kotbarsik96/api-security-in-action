@@ -12,7 +12,6 @@ type AuthService interface {
 }
 
 type CsrfService interface {
-	GenerateToken(sessID []byte) []byte
-	CompareToken(sessID []byte, token []byte) bool
-	GetCsrfProtectedMethods() []string
+	GenerateToken(id string) string
+	CompareToken(id string, token string) bool
 }

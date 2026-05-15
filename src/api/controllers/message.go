@@ -28,10 +28,12 @@ func NewMessageController(creator domain.MessageCreator, repo domain.MessageRepo
 
 func (c *MessageController) RegisterRoutes(rootGroup *gin.RouterGroup,
 	authMiddleware gin.HandlerFunc,
-	auditMiddleware gin.HandlerFunc) {
+	auditMiddleware gin.HandlerFunc,
+	csrfMiddleware gin.HandlerFunc) {
 	auth := rootGroup.Group("", authMiddleware, auditMiddleware)
+	csrf := auth.Group("", csrfMiddleware)
 	{
-		auth.POST("/spaces/:space_id/messages", c.HanldeCreateMessage)
+		csrf.POST("/spaces/:space_id/messages", c.HanldeCreateMessage)
 		auth.GET("/spaces/:space_id/messages", c.HandleGetMessages)
 		auth.GET("/messages/:message_id", c.HandleGetMessage)
 	}

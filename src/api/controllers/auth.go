@@ -10,7 +10,10 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+// ==controller==
 
 type AuthController struct {
 	AuthService domain.AuthService
@@ -24,13 +27,9 @@ func NewAuthController(authService domain.AuthService, csrfService domain.CsrfSe
 	}
 }
 
-func (c *AuthController) RegisterRoutes(rootGroup *gin.RouterGroup) {
-	rootGroup.POST("/auth/signup", c.HandleSignup)
-	rootGroup.POST("/auth/login", c.HandleLogin)
-	rootGroup.GET("/csrf", c.HandleCsrfToken)
-}
+// ==helpers==
 
-func SetCsrfCookie(ctx *gin.Context, token []byte) {
+func (c *AuthController) SetCsrfCookie(ctx *gin.Context, token string) {
 	secure := true
 	if os.Getenv("CURRENT_ENV") == "DEV" {
 		secure = false
@@ -38,7 +37,30 @@ func SetCsrfCookie(ctx *gin.Context, token []byte) {
 
 	maxAge := 3600 * 24
 
-	ctx.SetCookie("XSRF-Token", string(token), maxAge, "/", os.Getenv("CSRF_DOMAIN"), secure, false)
+	ctx.SetCookie("XSRF-Token", token, maxAge, "/", os.Getenv("CSRF_DOMAIN"), secure, false)
+}
+
+func (c *AuthController) InitAuthSession(ctx *gin.Context, userID uint) sessions.Session {
+	session := sessions.Default(ctx)
+	session.Set("user_id", userID)
+	session.Set("id", uuid.New().String())
+	session.Save()
+	return session
+}
+
+func (c *AuthController) AfterSucessfullAuth(ctx *gin.Context, userID uint) {
+	session := c.InitAuthSession(ctx, userID)
+	sessID := session.Get("id").(string)
+	token := c.CsrfService.GenerateToken(sessID)
+	c.SetCsrfCookie(ctx, token)
+}
+
+// ==handlers==
+
+func (c *AuthController) RegisterRoutes(rootGroup *gin.RouterGroup) {
+	rootGroup.POST("/auth/signup", c.HandleSignup)
+	rootGroup.POST("/auth/login", c.HandleLogin)
+	rootGroup.GET("/csrf", c.HandleCsrfToken)
 }
 
 type UserSignupRequest struct {
@@ -79,10 +101,7 @@ func (c *AuthController) HandleSignup(ctx *gin.Context) {
 		return
 	}
 
-	session := sessions.Default(ctx)
-	session.Set("user_id", user.ID)
-	token := c.CsrfService.GenerateToken([]byte(session.ID()))
-	SetCsrfCookie(ctx, token)
+	c.AfterSucessfullAuth(ctx, user.ID)
 
 	api.RespondCreated(ctx, api.Response{
 		Message: fmt.Sprintf("Welcome, %v", user.Login),
@@ -100,8 +119,9 @@ func (c *AuthController) HandleCsrfToken(ctx *gin.Context) {
 		return
 	}
 
-	token := c.CsrfService.GenerateToken([]byte(session.ID()))
-	SetCsrfCookie(ctx, token)
+	c.InitAuthSession(ctx, userID.(uint))
+	token := c.CsrfService.GenerateToken(session.Get("id").(string))
+	c.SetCsrfCookie(ctx, token)
 
 	api.RespondOk(ctx, api.Response{})
 }
@@ -136,10 +156,7 @@ func (c *AuthController) HandleLogin(ctx *gin.Context) {
 		return
 	}
 
-	session := sessions.Default(ctx)
-	session.Set("user_id", user.ID)
-	token := c.CsrfService.GenerateToken([]byte(session.ID()))
-	SetCsrfCookie(ctx, token)
+	c.AfterSucessfullAuth(ctx, user.ID)
 
 	api.RespondOk(ctx, api.Response{
 		Message: fmt.Sprintf("Welcome, %v", user.Login),
