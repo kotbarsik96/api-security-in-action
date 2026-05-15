@@ -57,10 +57,18 @@ func (c *AuthController) AfterSucessfullAuth(ctx *gin.Context, userID uint) {
 
 // ==handlers==
 
-func (c *AuthController) RegisterRoutes(rootGroup *gin.RouterGroup) {
-	rootGroup.POST("/auth/signup", c.HandleSignup)
-	rootGroup.POST("/auth/login", c.HandleLogin)
-	rootGroup.GET("/csrf", c.HandleCsrfToken)
+func (c *AuthController) RegisterRoutes(rootGroup *gin.RouterGroup, csrfMiddleware gin.HandlerFunc) {
+	authGroup := rootGroup.Group("/auth")
+	{
+		authGroup.POST("/signup", c.HandleSignup)
+		authGroup.POST("/login", c.HandleLogin)
+		authGroup.GET("/csrf", c.HandleCsrfToken)
+	}
+
+	csrf := authGroup.Group("", csrfMiddleware)
+	{
+		csrf.POST("/logout", c.HandleLogout)
+	}
 }
 
 type UserSignupRequest struct {
@@ -112,7 +120,10 @@ func (c *AuthController) HandleSignup(ctx *gin.Context) {
 func (c *AuthController) HandleCsrfToken(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userID := session.Get("user_id")
-	if userID == nil {
+	sessID := session.Get("id")
+	if userID == nil || sessID == nil {
+		session.Clear()
+		session.Save()
 		api.RespondError(ctx, api.Response{
 			Error: api.ErrUnauthorized("", nil),
 		})
@@ -120,7 +131,7 @@ func (c *AuthController) HandleCsrfToken(ctx *gin.Context) {
 	}
 
 	c.InitAuthSession(ctx, userID.(uint))
-	token := c.CsrfService.GenerateToken(session.Get("id").(string))
+	token := c.CsrfService.GenerateToken(sessID.(string))
 	c.SetCsrfCookie(ctx, token)
 
 	api.RespondOk(ctx, api.Response{})
@@ -162,4 +173,18 @@ func (c *AuthController) HandleLogin(ctx *gin.Context) {
 		Message: fmt.Sprintf("Welcome, %v", user.Login),
 		Data:    gin.H{"user": user},
 	})
+}
+
+func (c *AuthController) HandleLogout(ctx *gin.Context) {
+	session := sessions.Default(ctx)
+	session.Clear()
+	session.Save()
+
+	secure := true
+	if os.Getenv("CURRENT_ENV") == "DEV" {
+		secure = false
+	}
+	ctx.SetCookie("XSRF-Token", "", -1, "/", os.Getenv("CSRF_DOMAIN"), secure, false)
+
+	api.RespondOk(ctx, api.Response{})
 }

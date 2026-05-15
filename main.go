@@ -76,7 +76,7 @@ func RegisterControllers(router *gin.Engine, db *gorm.DB) {
 		auth.NewAuthService(db, auth.NewBcryptPasswordService()),
 		csrfService)
 
-	authCtrl.RegisterRoutes(api)
+	authCtrl.RegisterRoutes(api, csrfMdw)
 
 	// audit
 	auditCtrl := controllers.NewAuditController(

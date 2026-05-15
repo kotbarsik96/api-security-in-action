@@ -10,7 +10,12 @@ import (
 func MiddlewareCSRF(service domain.CsrfService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
-		sessID := session.Get("id").(string)
+		sessID := session.Get("id")
+
+		if sessID == nil {
+			AbortUnauthorized(c)
+			return
+		}
 
 		xcsrfToken := c.GetHeader("X-XSRF-Token")
 		if xcsrfToken == "" {
@@ -18,7 +23,7 @@ func MiddlewareCSRF(service domain.CsrfService) gin.HandlerFunc {
 			return
 		}
 
-		if !service.CompareToken(sessID, xcsrfToken) {
+		if !service.CompareToken(sessID.(string), xcsrfToken) {
 			AbortUnauthorized(c)
 			return
 		}
