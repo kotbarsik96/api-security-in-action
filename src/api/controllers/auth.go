@@ -40,19 +40,32 @@ func (c *AuthController) SetCsrfCookie(ctx *gin.Context, token string) {
 	ctx.SetCookie("XSRF-Token", token, maxAge, "/", os.Getenv("CSRF_DOMAIN"), secure, false)
 }
 
-func (c *AuthController) InitAuthSession(ctx *gin.Context, userID uint) sessions.Session {
+func (c *AuthController) InitAuthSession(ctx *gin.Context, userID uint) (sessions.Session, error) {
 	session := sessions.Default(ctx)
 	session.Set("user_id", userID)
-	session.Set("id", uuid.New().String())
+
+	sessUuid, err := uuid.NewRandom()
+	if err != nil {
+		return session, err
+	}
+
+	session.Set("id", sessUuid.String())
 	session.Save()
-	return session
+
+	return session, nil
 }
 
-func (c *AuthController) AfterSucessfullAuth(ctx *gin.Context, userID uint) {
-	session := c.InitAuthSession(ctx, userID)
+func (c *AuthController) AfterSucessfullAuth(ctx *gin.Context, userID uint) error {
+	session, err := c.InitAuthSession(ctx, userID)
+	if err != nil {
+		return err
+	}
+
 	sessID := session.Get("id").(string)
 	token := c.CsrfService.GenerateToken(sessID)
 	c.SetCsrfCookie(ctx, token)
+
+	return nil
 }
 
 // ==handlers==
@@ -109,11 +122,14 @@ func (c *AuthController) HandleSignup(ctx *gin.Context) {
 		return
 	}
 
-	c.AfterSucessfullAuth(ctx, user.ID)
+	err = c.AfterSucessfullAuth(ctx, user.ID)
 
 	api.RespondCreated(ctx, api.Response{
 		Message: fmt.Sprintf("Welcome, %v", user.Login),
-		Data:    gin.H{"user": user},
+		Data: gin.H{
+			"user":          user,
+			"authenticated": err == nil,
+		},
 	})
 }
 
@@ -167,7 +183,14 @@ func (c *AuthController) HandleLogin(ctx *gin.Context) {
 		return
 	}
 
-	c.AfterSucessfullAuth(ctx, user.ID)
+	err = c.AfterSucessfullAuth(ctx, user.ID)
+
+	if err != nil {
+		api.RespondError(ctx, api.Response{
+			Error: api.ErrInternal("Could not log in: server error", err),
+		})
+		return
+	}
 
 	api.RespondOk(ctx, api.Response{
 		Message: fmt.Sprintf("Welcome, %v", user.Login),
